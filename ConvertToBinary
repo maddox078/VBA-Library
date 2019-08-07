@@ -1,0 +1,25 @@
+'NOTES:
+'1.  Takes an input string and converts it to a string of binary
+
+Public Function ConvertToBinary(ByVal InputVal As String) As String
+    Dim BinaryString As String
+    Dim X As Long
+    Dim Y As Long
+    Dim TempVal As Long
+    
+    X = 1
+    Do Until X > Len(InputVal)
+        TempVal = Asc(Mid(InputVal, X, 1))
+        Y = 0
+        BinaryString = ""
+        Do Until Y > 7
+            BinaryString = CStr((TempVal Mod 2)) & BinaryString
+            TempVal = Int(TempVal / 2)
+            Y = Y + 1
+        Loop
+        
+        ConvertToBinary = ConvertToBinary & BinaryString
+        
+        X = X + 1
+    Loop
+End Function
