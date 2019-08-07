@@ -1,0 +1,18 @@
+'DEPENDENCIES:
+'1. Microsoft VBScript Regular Expressions 5.5
+
+'NOTES:
+'1. Just removes any line numbering from a block of code
+
+Public Function ClearLineNumbers(ModuleSyntax As String) As String
+    Dim Regex As New RegExp
+    Dim Retval As Object
+    Dim X As Integer
+    Dim Recset As DAO.Recordset
+        
+    Regex.Global = True
+    Regex.Multiline = True
+    Regex.IgnoreCase = True
+    Regex.Pattern = "^[0-9]*"
+    ClearLineNumbers = Regex.Replace(ModuleSyntax, "")
+End Function
