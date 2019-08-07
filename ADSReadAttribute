@@ -2,16 +2,13 @@
 '1. Reads the value of a specific attribute by name
 
 'DEPENDENCIES:
-'1. VBA-Library/RunPowershell
+'1. Microsoft Scripting Runtime
 
 Public Function ADSReadAttribute(FilePath As String, AttributeName As String) As String
-    Dim syntax As String
-    Dim Retval As Collection
+    Dim fso As Object
+    Dim Retval As Object
     
-    syntax = "Get-Content -Path '" & FilePath & "' -Stream '" & AttributeName & "'"
-    Set Retval = RunPowershell(syntax)
-    
-    If Retval.Count > 0 Then
-        ADSReadAttribute = Retval(1)
-    End If
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set Retval = fso.OpenTextFile(FilePath & ":" & AttributeName, 1)
+    ADSReadAttribute = Retval.ReadLine
 End Function
