@@ -1,0 +1,6 @@
+Public Function Derivative(InputVal As Variant) As Double
+    Dim Sigmoid As Double
+    
+    Sigmoid = 1 / (1 + Exp(-1 * InputVal))
+    Derivative = Sigmoid * (1 - Sigmoid)
+End Function
