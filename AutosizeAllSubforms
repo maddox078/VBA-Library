@@ -1,0 +1,21 @@
+'NOTES:
+'1. This just sets the columns of datasheet subforms to be an auto-determined width
+
+Public Function AutosizeAllSubforms(FormName As String)
+    Dim OpenForm As Form
+    Dim ControlObj As Control
+    Dim ControlFld As Control
+    
+    For Each OpenForm In Application.Forms
+        For Each ControlObj In OpenForm.Controls
+            If ControlObj.ControlType = acSubform Then
+                For Each ControlFld In ControlObj.Form.Controls
+                    Select Case ControlFld.ControlType
+                        Case acTextBox, acComboBox, acCheckBox
+                            ControlFld.ColumnWidth = -2
+                    End Select
+                Next ControlFld
+            End If
+        Next ControlObj
+    Next OpenForm
+End Function
