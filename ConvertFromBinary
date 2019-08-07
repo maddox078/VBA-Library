@@ -1,0 +1,28 @@
+'NOTES:
+'1. Translates a binary string
+
+Public Function ConvertFromBinary(ByVal InputVal As String) As String
+    Dim X As Long
+    Dim Y As Long
+    Dim IntVal As Long
+    Dim SubStr As String
+    Dim Retval As String
+    
+    X = 1
+    Do Until X > Len(InputVal)
+        Y = 7
+        SubStr = Mid(InputVal, X, 8)
+        IntVal = 0
+        
+        Do Until Y < 0
+            IntVal = IntVal + (CInt(Mid(SubStr, 8 - Y, 1)) * (2 ^ Y))
+            
+            Y = Y - 1
+        Loop
+        
+        Retval = Retval & Chr(IntVal)        
+        X = X + 8
+    Loop
+    
+    ConvertFromBinary = Retval
+End Function
