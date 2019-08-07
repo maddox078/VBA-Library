@@ -1,0 +1,38 @@
+'NOTES:
+'1. This is just an easy way to programatically change pivot table filters in Excel
+'2. The PvtFld argument is the name of which field to filter on
+'3. The ValueList argument is intended to be passed as an array of values to filter on (inclusive)
+
+Public Function ChangePivotFilters(PvtTbl As PivotTable, PvtFld As String, ValueList As Variant)
+  Dim i As Integer
+  Dim str As String
+
+  'Make the string to use in the Eval statement later on
+  i = 0
+  str = ""
+  Do While i <= UBound(ValueList)
+    str = str & "'" & ValueList(i) & "',"
+    i = i + 1
+  Loop
+  str = Left(str, Len(str) - 1)
+
+  'Make all options visible so that we don't run into an error in the following loop
+  'where we remove all pivotitem filters (one must always be selected)
+  i = 1
+  Do Until i > PvtTbl.PivotFields(PvtFld).PivotItems.Count
+    PvtTbl.PivotFields(PvtFld).PivotItems(i).Visible = True
+    i = i + 1
+  Loop
+
+  'Loop through each pivotitem, hiding values that weren't in the supplied list
+  i = 1
+  Do While i <= PvtTbl.PivotFields(PvtFld).PivotItems.Count
+    If Eval("'" & PvtTbl.PivotFields(PvtFld).PivotItems(i).Value & "' in (" & str & ")") Then
+      PvtTbl.PivotFields(PvtFld).PivotItems(i).Visible = True
+    Else
+      PvtTbl.PivotFields(PvtFld).PivotItems(i).Visible = False
+    End If
+    i = i + 1
+  Loop
+
+End Function
