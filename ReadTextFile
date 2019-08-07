@@ -1,0 +1,50 @@
+'NOTES:
+'1. This reads a text file at a given path and returns its contents in either (1. String, 2. Variant(), 3. Collection)
+
+Public Function ReadTextFile(FilePath As String, OutputType As Integer) As Variant
+    Dim FileNum As Integer
+    Dim RowTxt As String
+    Dim OutputCol As New Collection
+    Dim OutputAry() As Variant
+    Dim OutputArySize As Long
+    Dim OutputStr As String
+    Dim i As Long
+    
+    'Gets first file number that is available, then opens the text file under that ID
+    FileNum = FreeFile()
+    Open FilePath For Input As FileNum
+        
+    OutputArySize = 1
+    i = 0
+    
+    'Loops through each line of the text file and stores it in the rolling string value
+    Do Until EOF(FileNum)
+        Line Input #FileNum, RowTxt
+        
+        'Handle output array values
+        ReDim Preserve OutputAry(OutputArySize)
+        OutputAry(OutputArySize - 1) = RowTxt
+        OutputArySize = OutputArySize + 1
+        
+        'Handle output collection values
+        OutputCol.Add RowTxt
+        
+        'Handle output string value
+        OutputStr = OutputStr & vbCrLf & RowTxt
+        
+        i = i + 1
+    Loop
+    
+    'Once done with the file number ID, close it out to free it back up
+    Close #FileNum
+    
+    'Set output of function to the appropriate variable
+    Select Case OutputType
+        Case 1
+            ReadTextFile = OutputStr
+        Case 2
+            ReadTextFile = OutputAry
+        Case 3
+            Set ReadTextFile = OutputCol
+    End Select
+End Function
