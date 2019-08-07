@@ -1,0 +1,24 @@
+Public Function CreateListObjectFromRecordset(ByVal InputRecordset As Recordset, ByRef DestinationRange As Range)
+    Dim Recset As Recordset
+    Dim X As Long
+    Dim RecordCount As Long
+    Dim Tbl As ListObject
+    
+    Set Recset = InputRecordset
+    Recset.MoveFirst
+    Recset.MoveLast
+    RecordCount = CLng(Recset.RecordCount)
+    Recset.MoveFirst
+    
+    X = 0
+    Do Until X >= Recset.Fields.Count
+        DestinationRange.Offset(0, X).Value = Recset.Fields(X).Name
+        
+        X = X + 1
+    Loop
+    
+    Set Tbl = DestinationRange.Parent.ListObjects.Add(SourceType:=xlSrcRange, Source:=DestinationRange.Parent.Range(DestinationRange.Address & ":" & DestinationRange.Offset(0, Recset.Fields.Count - 1).Address), xlListObjectHasHeaders:=xlYes, Destination:=DestinationRange)
+    Tbl.ListRows.Add
+    Tbl.Parent.Rows(Tbl.DataBodyRange.row & ":" & Tbl.DataBodyRange.row + RecordCount - 2).Insert
+    Tbl.Parent.Range(Tbl.DataBodyRange(1, 1).Address).CopyFromRecordset Recset
+End Function
