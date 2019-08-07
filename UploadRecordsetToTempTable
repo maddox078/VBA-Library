@@ -1,0 +1,66 @@
+'NOTES:
+'1. This takes a string name for either a table or query in the local DB and uploads its data to a global temp table in SSMS via a passed in ADO Connection
+
+Public Function UploadRecordsetToTempTable(RecordsetName As String, ByRef Conn As ADODB.Connection)
+  Dim Qry As ADODB.Command
+  Dim Recset As Recordset
+  Dim X As Long
+  Dim TempTableName As String
+  Dim DataTypeStr As String
+  Dim FieldsStr As String
+  Dim TempStr As String
+
+  Set Qry = New ADODB.Command
+  Set Recset = Application.CurrentDb.OpenRecordset(RecordsetName, , dbOpenForwardOnly)
+  TempTableName = "##TEMP_" & Replace(RecordsetName, " ", "_")
+
+  Set Qry.ActiveConnection = Conn
+
+  Qry.CommandText = "IF OBJECT_ID('" & TempTableName & "') IS NOT NULL DROP TABLE " & TempTableName
+  Qry.Execute
+
+  X = 0
+  Do Until X >= Recset.Fields.Count
+    DataTypeStr = ""
+    Select Case Recset.Fields(X).Type
+      Case dbBigInt, dbLong, dbInteger, dbNumeric
+        DataTypeStr = "BIGINT"
+      Case dbBoolean
+        DataTypeStr = "BIT"
+      Case dbDate, dbTimeStamp
+        DataTypeStr = "DATETIME"
+      Case dbFloat, dbDecimal, dbDouble
+        DataTypeStr = "DECIMAL(20,2)"
+      Case dbMemo, dbText
+        DataTypeStr = "VARCHAR(" & DLookup("MAX(LEN([" & Recset.Fields(X).Name & "]))", Recset.Name) & ")"
+    End Select
+    FieldsStr = FieldsStr & ", [" & Recset.Fields(X).Name & "] " & DataTypeStr
+    X = X + 1
+  Loop
+
+  Qry.CommandText = "CREATE TABLE " & TempTableName & " (" & Mid(FieldsStr, 2) & ")"
+  Qry.Execute
+
+  Do Until Recset.EOF
+    Qry.CommandText = "INSERT INTO " & TempTableName & " VALUES("
+    X = 0
+    TempStr = ""
+    Do Until X >= Recset.Fields.Count
+      Select Case Recset.Fields(X).Type
+        Case dbBigInt, dbLong, dbInteger, dbNumeric, dbFloat, dbDecimal, dbDouble
+          TempStr = TempStr & ", " & CStr(Nz(Recset.Fields(X).Value, 0))
+        Case dbBoolean
+          TempStr = TempStr & ", " & CStr(CInt(Recset.Fields(X).Value))
+        Case Else
+          TempStr = TempStr & ",'" & Replace(CStr(Nz(Recset.Fields(X).Value)), "'", "''") & "'"
+      End Select
+
+      X = X + 1
+    Loop
+    TempStr = Mid(TempStr, 2)
+    Qry.CommandText = Qry.CommandText & TempStr & ")"
+    Qry.Execute
+    Recset.MoveNext
+  Loop
+
+End Function
