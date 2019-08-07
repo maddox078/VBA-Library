@@ -1,0 +1,22 @@
+'DEPENDENCIES:
+'1. VBA-Library/AllWinAPIFunctions
+'2. VBA-Library/AllStructs
+
+'NOTES:
+'1. This creates a GUID object and then translates its ID to a string
+
+Public Function CreateGUIDString(Optional IncludeBrackets As Boolean) As String
+    Dim StringHolder As String
+    Dim Retval As LongPtr
+    Dim GUIDHolder As GUID
+    
+    Retval = CoCreateGuid(GUIDHolder)
+    StringHolder = String$(CLng(39), vbNullChar)
+    Call StringFromGUID2(GUIDHolder, StrPtr(StringHolder), CLng(39))
+    
+    If IncludeBrackets = False Then
+        StringHolder = Replace(Replace(StringHolder, "{", ""), "}", "")
+    End If
+    
+    CreateGUIDString = Mid(StringHolder, 1, Len(StringHolder) - 1)
+End Function
