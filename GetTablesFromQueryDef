@@ -1,0 +1,61 @@
+'NOTES:
+'1. Takes a QueryDef object and extracts the names of the tables or queries used in the FROM clause
+
+'DEPENDENCIES:
+'1. Microsoft VBScript Regular Expressions 5.5 
+
+Public Function GetTablesFromQueryDef(QryDef As QueryDef) As Collection
+    Dim Regex As New RegExp
+    Dim Retval As Object
+    Dim SQL As String
+    Dim X As Long
+    Dim Y As Long
+    Dim Z As Long
+    Dim StartIndx As Long
+    Dim EndIndx As Long
+    Dim TempStr As String
+    Dim Flag As Boolean
+    
+    Set GetTablesFromQueryDef = New Collection
+    
+    Regex.Global = True
+    Regex.MultiLine = True
+    Regex.IgnoreCase = True
+    Regex.Pattern = "(?:FROM |JOIN )(?:[(]*)(((?![\[])([a-zA-Z0-9_\.\/]*))|(?:[\[])([a-zA-Z0-9_\.\/ ]*)(?:[\]]))"
+     
+    SQL = QryDef.SQL
+    
+    Set Retval = Regex.Execute(SQL)
+    X = 0
+    Do Until X >= Retval.Count
+        Y = 0
+        Do Until Y >= Retval(X).SubMatches.Count
+            TempStr = Retval(X).SubMatches(Y)
+            TempStr = Replace(TempStr, "[", "")
+            TempStr = Replace(TempStr, "]", "")
+
+            If TempStr <> "" Then
+                Flag = False
+                Z = 1
+                Do Until Z > GetTablesFromQueryDef.Count
+                    If GetTablesFromQueryDef.Item(CLng(Z)) = TempStr Then
+                        Flag = True
+                        Exit Do
+                    End If
+                    
+                    Z = Z + 1
+                Loop
+                
+                If Flag = False Then
+                    GetTablesFromQueryDef.Add TempStr
+                End If
+                Exit Do
+            End If
+            
+            Y = Y + 1
+        Loop
+                
+        X = X + 1
+    Loop
+    
+End Function
