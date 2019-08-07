@@ -1,0 +1,7 @@
+'NOTES:
+'1. Are there easier ways to do this?  Yes. Did I just want to see if I could do this without IF statements?  Also yes.
+'2. Returns a date variable set to the last specific weekday as of a specified date (Sunday is 1)
+
+Public Function GetLastWeekday(weekdaynum As Integer, AsOfDate As Date) As Date
+    GetLastWeekday = DateAdd("d", -1 * (((7 + (Weekday(AsOfDate) - weekdaynum))) Mod 7) + (7 * CInt((((1 / (1 + Exp(-1 * (((7 + (Weekday(AsOfDate) - weekdaynum))) Mod 7)))) * (1 - (1 / (1 + Exp(-1 * (((7 + (Weekday(AsOfDate) - weekdaynum))) Mod 7))))))) + 0.26)), AsOfDate)
+End Function
