@@ -1,8 +1,5 @@
 'NOTES:
-'1. Reads the value of a specific attribute by name
-
-'DEPENDENCIES:
-'1. Microsoft Scripting Runtime
+'1. Reads the value of a specific alternative data stream attribute by name
 
 Public Function ADSReadAttribute(FilePath As String, AttributeName As String) As String
     Dim fso As Object
