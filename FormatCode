@@ -1,0 +1,49 @@
+'NOTES:
+'1. This function removes and reformats indentation in VBA code
+'2. Intended to be used with the VBA Extensibility library, but not reliant on it
+
+Public Function FormatCode(ModuleSyntax As String) As String
+    Dim X As Integer
+    Dim Y As Integer
+    Dim Ary() As String
+    Dim TempSyntax As String
+    Dim FirstWord As String
+    Dim IndentCount As Integer
+    
+    Ary = Split(ModuleSyntax, vbCrLf)
+        
+    FormatCode = Ary(0) & vbCrLf
+    IndentCount = 1
+    X = 1
+    Do Until X > UBound(Ary)
+        TempSyntax = Replace(Trim(Ary(X)), vbTab, "")
+          
+        If InStr(1, TempSyntax, " ") > 0 Then
+            FirstWord = Mid(TempSyntax, 1, InStr(1, TempSyntax, " ") - 1)
+        Else
+            FirstWord = TempSyntax
+        End If
+        
+        Select Case FirstWord
+            Case "End", "Loop", "Else", "ElseIf"
+                IndentCount = IndentCount - 1
+        End Select
+        
+        Y = 1
+        Do Until Y > IndentCount
+            TempSyntax = vbTab & TempSyntax
+                    
+            Y = Y + 1
+        Loop
+               
+        FormatCode = FormatCode & TempSyntax & vbCrLf
+             
+        Select Case FirstWord
+            Case "If", "Select", "Do", "While", "Else", "ElseIf", "For"
+                IndentCount = IndentCount + 1
+        End Select
+                
+        X = X + 1
+    Loop
+        
+End Function
