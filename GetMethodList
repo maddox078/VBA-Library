@@ -1,0 +1,63 @@
+'DEPENDENCIES:
+'1. Microsoft VBScript Regular Expressions 5.5
+
+'NOTES:
+'1. Returns the following back in a keyed 2D collection: Project Name, Module Name, Procedure Name, Procedure Type, Procedure Scope, Return Type, Syntax of the Procedure, Procedure Start Line
+'2. Just pass in an Access Application object that's already got a database open
+
+Public Function GetMethodList(ByRef axs As Access.Application) As Collection
+    On Error Resume Next
+    Dim Regex As New RegExp
+    Dim Retval As Object
+    Dim ModuleStr As String
+    Dim W As Long
+    Dim X As Long
+    Dim Y As Long
+    Dim Z As Long
+    Dim TempCol As New Collection
+    Dim SubTempCol As Collection
+    
+    Regex.Global = True
+    Regex.IgnoreCase = True
+    Regex.Multiline = True
+    Regex.Pattern = "(Public |Private )?(Function |Sub )([a-zA-Z0-9_]*)(?:[\(][a-zA-Z0-9\.\=_ ]*?[\)])(?: As )?([a-zA-Z0-9_\.\= ]*)?(?:[\S\s]*?)(End Function|End Sub?)"
+        
+    X = 1
+    Do Until X > axs.VBE.VBProjects.Count
+        Y = 1
+        Do Until Y > axs.VBE.VBProjects(X).VBComponents.Count
+            ModuleStr = axs.VBE.VBProjects(X).VBComponents(Y).CodeModule.Lines(1, axs.VBE.VBProjects(X).VBComponents(Y).CodeModule.CountOfDeclarationLines + axs.VBE.VBProjects(X).VBComponents(Y).CodeModule.CountOfLines)
+            
+            Set Retval = Regex.Execute(ModuleStr)
+            W = 0
+
+            Do Until W >= Retval.Count
+                Set SubTempCol = New Collection
+                SubTempCol.Add axs.VBE.VBProjects(X).Name, "ProjectName"
+                SubTempCol.Add axs.VBE.VBProjects(X).VBComponents(Y).Name, "ModuleName"
+                SubTempCol.Add Retval(W).SubMatches(2), "ProcedureName"
+                SubTempCol.Add Retval(W).SubMatches(1), "ProcedureType"
+                
+                If Retval(W).SubMatches(0) = "" Then
+                    SubTempCol.Add "Public ", "ProcedureScope"
+                Else
+                    SubTempCol.Add Retval(W).SubMatches(0), "ProcedureScope"
+                End If
+                
+                SubTempCol.Add Retval(W).SubMatches(3), "ReturnType"
+                SubTempCol.Add Retval(W), "ProcedureSyntax"
+                SubTempCol.Add axs.VBE.VBProjects(X).VBComponents(Y).CodeModule.ProcBodyLine(Retval(W).SubMatches(2), vbext_pk_Proc), "ProcedureStartLine"
+                
+                TempCol.Add SubTempCol
+                    
+                W = W + 1
+            Loop
+                        
+            Y = Y + 1
+        Loop
+        
+        X = X + 1
+    Loop
+    
+    Set GetMethodList = TempCol
+End Function
