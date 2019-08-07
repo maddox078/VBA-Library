@@ -1,0 +1,101 @@
+"NOTES:
+'1. This function just sizes the columns of a list box
+'2. SizeByAverages determines if we make each column proportional in size based on average length of the column or max length
+'3. LimitToControlWidth determines if the we can expand the control (typically used in junction with SizeByAverages=FALSE)
+
+Public Function AutosizeListBox(ByRef LstBox As ListBox, SizeByAverages As Boolean, LimitToControlWidth As Boolean)
+    Dim X As Long
+    Dim Y As Long
+    Dim TotalColWidth As Double
+    Dim AverageColWidth As Double
+    Dim MaxColWidth As Double
+    Dim AverageWidths As New Collection
+    Dim MaxWidths As New Collection
+    Dim TotalAverageWidths As Double
+    Dim TotalMaxWidths As Double
+    Dim WidthStr As String
+    Dim ItemsToCount As Long
+    Dim NewColWidth As Long
+    Dim Recset As Object
+    Dim QuerySyntax As String
+               
+    'Loop through each column and determine the average and max length of all row items
+    X = 0
+    Do Until X >= LstBox.ColumnCount
+        TotalColWidth = 0
+        AverageColWidth = 0
+        ItemsToCount = 0
+        MaxColWidth = 0
+        Y = 0
+        
+        'Check if the row source for the list box is a recordset, if so use SQL to find the aggregates instead of looping through each row as this will be faster in larger data sets
+        If IsNull(LstBox.Recordset) = False Then
+            QuerySyntax = "SELECT MAX(LEN(NZ([" & LstBox.Recordset.Fields(X).Name & "]))) as MaxLenVal " & _
+                          "      ,SUM(LEN(NZ([" & LstBox.Recordset.Fields(X).Name & "]))) as TotalLenVal " & _
+                          "      ,COUNT(*) as ItemCount " & _
+                          "FROM [" & LstBox.Recordset.Name & "] " & _
+                          "WHERE LTRIM(RTRIM(NZ([" & LstBox.Recordset.Fields(X).Name & "]))) <> ''"
+            Set Recset = LstBox.Application.CurrentDb.OpenRecordset(QuerySyntax, , dbOpenForwardOnly)
+            ItemsToCount = Recset("ItemCount")
+            MaxColWidth = Recset("MaxLenVal")
+            TotalColWidth = Recset("TotalLenVal")
+        Else
+            Do Until Y >= LstBox.ListCount
+                If Len(Nz(LstBox.Column(X, Y))) > 0 Then
+                    If Len(Nz(LstBox.Column(X, Y))) > MaxColWidth Then
+                        MaxColWidth = Len(Nz(LstBox.Column(X, Y)))
+                    End If
+                    
+                    TotalColWidth = TotalColWidth + Len(Nz(LstBox.Column(X, Y)))
+                    ItemsToCount = ItemsToCount + 1
+                End If
+                
+                Y = Y + 1
+            Loop
+        End If
+           
+        'If there was at least one non blank value then calculate the average length of an item for each column, if that average length is less than the length of any existing headers,
+        'then set the average length to be the length of the header caption
+        If ItemsToCount > 0 Then
+            MaxWidths.Add MaxColWidth
+            TotalMaxWidths = TotalMaxWidths + MaxColWidth
+            
+            If ((TotalColWidth / ItemsToCount) < Len(Nz(LstBox.Column(X, 0)))) & LstBox.ColumnHeads = True Then
+                AverageWidths.Add Len(Nz(LstBox.Column(X, 0)))
+                TotalAverageWidths = TotalAverageWidths + Len(Nz(LstBox.Column(X, 0)))
+            Else
+                AverageWidths.Add (TotalColWidth / ItemsToCount)
+                TotalAverageWidths = TotalAverageWidths + (TotalColWidth / ItemsToCount)
+            End If
+        End If
+        
+        X = X + 1
+    Loop
+    
+    'Loop through each column and calculate what the new column width (in pixels) should be and then append to a string.
+    'If LimitToControlWidth is TRUE then make the Max/Average size be a percentage of the overal control width instead of a flat number.
+    X = 1
+    WidthStr = ""
+    Do Until X > LstBox.ColumnCount
+        If SizeByAverages = True Then
+            If LimitToControlWidth = True Then
+                NewColWidth = CInt(((AverageWidths(X) / TotalAverageWidths) * LstBox.Width))
+            Else
+                NewColWidth = AverageWidths(X) * (LstBox.FontSize ^ 2)
+            End If
+        Else
+            If LimitToControlWidth = True Then
+                NewColWidth = CInt((MaxWidths(X) / TotalMaxWidths) * LstBox.Width)
+            Else
+                NewColWidth = MaxWidths(X) * (LstBox.FontSize ^ 2)
+            End If
+        End If
+        
+        WidthStr = WidthStr & NewColWidth & ";"
+        
+        X = X + 1
+    Loop
+    
+    WidthStr = Left(WidthStr, Len(WidthStr) - 1)
+    LstBox.ColumnWidths = WidthStr
+End Function
