@@ -1,0 +1,34 @@
+'NOTES
+'1. I developed this as a way around how slow Range.CopyFromRecordset is in list objects, this should be substantially faster
+
+Public Function PasteRecordsetIntoListObject(ByRef InputRecset As Recordset, ByRef Tbl As ListObject)
+    Dim Recset As Recordset
+    Dim RecordCount As Long
+    Dim X As Long
+    
+    'Clear out and delete any rows already in the table
+    If Tbl.ListRows.Count > 0 Then
+        Tbl.DataBodyRange.Rows.Delete
+    End If
+    
+    'Add an initial row
+    Tbl.ListRows.Add
+    
+    'Get count of records so we know how many rows to insert into the list object
+    Set Recset = InputRecset
+    Recset.MoveFirst
+    X = 0
+    Do Until Recset.EOF
+        Recset.MoveNext
+        X = X + 1
+    Loop
+    
+    'Record record count and move to start of recordset
+    RecordCount = CLng(X)
+    Recset.MoveFirst
+    
+    'Paste the recordset into the first cell of the data body range
+    Set xl = Tbl.Parent.Parent.Parent
+    Tbl.Parent.Rows(Tbl.DataBodyRange.row & ":" & Tbl.DataBodyRange.row + RecordCount - 2).Insert
+    Tbl.Parent.Range(Tbl.DataBodyRange(1, 1).Address).CopyFromRecordset Recset
+End Function
