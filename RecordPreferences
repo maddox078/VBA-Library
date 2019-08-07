@@ -1,0 +1,100 @@
+'DEPENDENCIES:
+'1. Microsoft Scripting Runtime
+'2. VBA-Library/ReadPreferences
+
+'NOTES:
+'1. This function allows for saved user preferences on datasheet subforms
+'2. It tracks: Associated Form Name, Form Filter, Form Sort Expression, Hidden Columns, Column Order
+'3. Optional parameter is if you want control over what you want the name of the form to be represented as.
+'   This was added so that different instances of a form can have their own preferences
+'4. Output is in a custom markup format and is saved in the same directory as the current project
+
+Public Function RecordPreferences(ByRef TargetForm As Form, Optional InputFormIDName As String)
+    Dim RetVal As Collection
+    Dim X As Integer
+    Dim FileStr As String
+    Dim fso As New FileSystemObject
+    Dim TxtStream As TextStream
+    Dim HiddenStr As String
+    Dim ORDERStr As String
+    Dim FormID As String
+    Dim FormFound As Boolean
+    
+    'See if there is a form ID override, if so use that instead of form name
+    If IsMissing(InputFormIDName) = False Then
+        FormID = InputFormIDName
+    Else
+        FormID = TargetForm.Name
+    End If
+    
+    Set RetVal = ReadPreferences
+    
+    'Loop through all controls to find the ones that are data columns and hidden, then record to a delmited string
+    X = 0
+    Do Until X >= TargetForm.Controls.Count
+        Select Case TypeName(TargetForm.Controls(X))
+            Case "TextBox", "ComboBox"
+                If TargetForm.Controls(X).ColumnOrder <> 0 Then
+                    ORDERStr = ORDERStr & "[" & TargetForm.Controls(X).Name & ":" & TargetForm.Controls(X).ColumnOrder & "]&"
+                End If
+                
+                If TargetForm.Controls(X).ColumnHidden = True Then
+                    HiddenStr = HiddenStr & "[" & TargetForm.Controls(X).Name & "]&"
+                End If
+        End Select
+        
+        X = X + 1
+    Loop
+    
+    If HiddenStr <> "" Then
+        HiddenStr = Left(HiddenStr, Len(HiddenStr) - 1)
+    End If
+    
+    If ORDERStr <> "" Then
+        ORDERStr = Left(ORDERStr, Len(ORDERStr) - 1)
+    End If
+    
+    'Loop through all found forms in the preference file, if the form is not the one we're looking for then simply record its existing values.
+    'If the desired form has no entry, make one for it, and if it does have one then overwrite the existing values
+    FormFound = False
+    X = 1
+    FileStr = ""
+    Do Until X > RetVal.Count
+        If RetVal(X)(1) = FormID Then
+            FileStr = FileStr & "<FORM>" & vbCrLf
+            FileStr = FileStr & " <ID>" & FormID & "</ID>" & vbCrLf
+            FileStr = FileStr & " <FILTER>" & TargetForm.Filter & "</FILTER>" & vbCrLf
+            FileStr = FileStr & " <SORT>" & TargetForm.OrderBy & "</SORT>" & vbCrLf
+            FileStr = FileStr & " <HIDE>" & HiddenStr & "</HIDE>" & vbCrLf
+            FileStr = FileStr & " <ORDER>" & ORDERStr & "</ORDER>" & vbCrLf
+            FileStr = FileStr & "</FORM>" & vbCrLf
+            FormFound = True
+        Else
+            FileStr = FileStr & "<FORM>" & vbCrLf
+            FileStr = FileStr & " <ID>" & RetVal(X)(1) & "</ID>" & vbCrLf
+            FileStr = FileStr & " <FILTER>" & RetVal(X)(2) & "</FILTER>" & vbCrLf
+            FileStr = FileStr & " <SORT>" & RetVal(X)(3) & "</SORT>" & vbCrLf
+            FileStr = FileStr & " <HIDE>" & RetVal(X)(4) & "</HIDE>" & vbCrLf
+            FileStr = FileStr & " <ORDER>" & RetVal(X)(5) & "</ORDER>" & vbCrLf
+            FileStr = FileStr & "</FORM>" & vbCrLf
+        End If
+        
+        X = X + 1
+    Loop
+    
+    If FormFound = False Then
+        FileStr = FileStr & "<FORM>" & vbCrLf
+        FileStr = FileStr & " <ID>" & FormID & "</ID>" & vbCrLf
+        FileStr = FileStr & " <FILTER>" & TargetForm.Filter & "</FILTER>" & vbCrLf
+        FileStr = FileStr & " <SORT>" & TargetForm.OrderBy & "</SORT>" & vbCrLf
+        FileStr = FileStr & " <HIDE>" & HiddenStr & "</HIDE>" & vbCrLf
+        FileStr = FileStr & " <ORDER>" & ORDERStr & "</ORDER>" & vbCrLf
+        FileStr = FileStr & "</FORM>" & vbCrLf
+    End If
+    
+    'Write the preferences file
+    Set TxtStream = fso.CreateTextFile(Application.CurrentProject.Path & "\UserPref.txt", True)
+    TxtStream.Write FileStr
+    TxtStream.Close
+    
+End Function
