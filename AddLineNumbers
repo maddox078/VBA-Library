@@ -1,0 +1,72 @@
+'DEPENDENCIES:
+'1. Microsoft VBScript Regular Expressions 5.5
+
+'NOTES:
+'1. Adds line numbers in a specified increment to a string of VBA code
+'2. Intended to work with VBA Extensibility library but not dependant
+
+Public Function AddLineNumbers(ModuleSyntax As String, LineIncrement As Long) As String
+    Dim Regex As New RegExp
+    Dim Retval As Object
+    Dim Lines() As String
+    Dim X As Long
+    Dim FirstWord As String
+    Dim LineSyntax As String
+    Dim InMultiline As Boolean
+    Dim InMethod As Boolean
+    Dim SpaceCount As Integer
+    Dim SpaceOffsetCount As Integer
+    Const FirstWordPattern = "([a-zA-Z0-9_]*)"
+    Const FunctionStartPattern = "(Public |Private )?(Function | Sub )"
+    
+    Regex.Global = True
+    Regex.Multiline = False
+    Regex.IgnoreCase = False
+    Regex.Pattern = FirstWordPattern
+    
+    InMethod = False
+    InMultiline = False
+    Lines = Split(ModuleSyntax, vbCrLf)
+    X = 0
+    Do Until X > UBound(Lines)
+        LineSyntax = Replace(Trim(Lines(X)), vbTab, "")
+        FirstWord = LineSyntax
+        SpaceCount = Len(CStr(LineIncrement * X))
+        SpaceOffsetCount = 4 - SpaceCount
+        Regex.Pattern = FirstWordPattern
+        Set Retval = Regex.Execute(LineSyntax)
+        
+        If Retval.Count > 0 Then
+           FirstWord = CStr(Trim(Retval(0)))
+        End If
+        
+        If InMultiline = False And InMethod = True Then
+            Select Case FirstWord
+                Case "Case", "Dim", "Public", "Private", "Const", "Function", "Sub"
+                    AddLineNumbers = AddLineNumbers & String$(SpaceCount + SpaceOffsetCount + 4, " ") & Lines(X) & vbCrLf
+                Case Else
+                    AddLineNumbers = AddLineNumbers & CStr(LineIncrement * X) & String$(SpaceOffsetCount + 4, " ") & Lines(X) & vbCrLf
+            End Select
+        Else
+            AddLineNumbers = AddLineNumbers & String$(SpaceCount + SpaceOffsetCount + 4, " ") & Lines(X) & vbCrLf
+        End If
+        
+        Regex.Pattern = FunctionStartPattern
+        Set Retval = Regex.Execute(LineSyntax)
+        
+        If Retval.Count > 0 Then
+            InMethod = True
+        ElseIf LineSyntax = "End Function" Or LineSyntax = "End Sub" Then
+            InMethod = False
+        End If
+        
+        If Right(LineSyntax, 2) = " _" Then
+            InMultiline = True
+        Else
+            InMultiline = False
+        End If
+        
+        X = X + 1
+    Loop
+    
+End Function
