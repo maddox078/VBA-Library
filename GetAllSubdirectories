@@ -1,0 +1,96 @@
+'NOTES:
+'1. Recursively scans a folder for all subfolders, returned by full path in a collection
+
+Public Function GetAllSubdirectories(SearchDirectory As String) As Collection
+  'Table to write to
+  Dim Writeset As Recordset
+  'Set writeset = CurrentDb.OpenRecordset(TableName)
+
+  'Localize argument
+  Dim BaseDir As String
+  BaseDir = SearchDirectory
+
+  'Needed to store a particular folder object by name reference
+  Dim fso As FileSystemObject
+  Set fso = CreateObject("Scripting.filesystemobject")
+
+  'Top of folder hierarchy
+  Dim BaseFldr As Folder
+  Set BaseFldr = fso.GetFolder(BaseDir)
+
+  'Will dynamically be allocated to all subfolders of the current folder
+  Dim FldrCol As Collection
+  Set FldrCol = New Collection
+
+  'Stores all unique directories found
+  Dim FoundCol As Collection
+  Set FoundCol = New Collection
+
+  'Overwriteable folder objects, Fldr is the current directory, SubFldr is used in for each loops
+  Dim Fldr As Folder
+  Dim SubFldr As Folder
+
+  'Stores each hierarchical directory level, and the last
+  Dim IndexList As Collection
+  Set IndexList = New Collection
+
+  'Iterators, i is for horizontal movement in the same directory and k stores the last read location in
+  'the previous directory that was read
+  Dim i As Integer
+  i = 1
+  Dim k As Integer
+  k = 1
+
+  'Initialize loop objects and values to start at the top
+  Set Fldr = BaseFldr
+  For Each SubFldr In Fldr.SubFolders
+      FldrCol.Add SubFldr, SubFldr.path
+  Next SubFldr
+  IndexList.Add 1, BaseFldr.path
+  FoundCol.Add BaseFldr, BaseFldr.path
+
+  'Clear out destination write table
+  'CurrentDb.Execute ("delete * from " & TableName)
+
+  'Until the current directory is forced to jump up above base directory.....
+  Do Until Fldr.path = BaseFldr.ParentFolder.path
+
+      'In each directory, while not at the end of the horizontal list.....
+      Do While i <= FldrCol.Count
+
+          'If the current subfolder does not have subfolders, keep reading horizontally
+          If FldrCol(i).SubFolders.Count = 0 Then
+              FoundCol.Add FldrCol(i), FldrCol(i).path
+              i = i + 1
+
+          'Otherwise shift entire hierarchy down and store location of branch
+          Else
+              FoundCol.Add FldrCol(i), FldrCol(i).path
+              k = i
+              IndexList.Add k, FldrCol(i).path
+              Set Fldr = FldrCol(i)
+              Set FldrCol = Nothing
+              Set FldrCol = New Collection
+              For Each SubFldr In Fldr.SubFolders
+                  FldrCol.Add SubFldr, SubFldr.path
+              Next SubFldr
+              i = 1
+          End If
+      Loop
+
+      'Set up next directory to be next horizontal value from where you left off
+      i = IndexList(Fldr.path) + 1
+
+      'Shift entire hierarchy up
+      Set Fldr = Fldr.ParentFolder
+      Set FldrCol = Nothing
+      Set FldrCol = New Collection
+      For Each SubFldr In Fldr.SubFolders
+          FldrCol.Add SubFldr, SubFldr.path
+      Next SubFldr
+  Loop
+
+  'Return value
+  Set GetAllSubdirectories = FoundCol
+  Exit Function
+End Function
