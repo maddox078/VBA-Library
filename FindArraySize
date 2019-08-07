@@ -1,0 +1,6 @@
+'NOTES:
+'1. Return value is in Bytes
+
+Public Function FindArraySize(ByRef ary As Variant) As Long
+    FindArraySize = Abs(VarPtr(ary(0)) - VarPtr(ary(UBound(ary))))
+End Function
