@@ -1,0 +1,50 @@
+'DEPENDENCIES:
+'1. VBA-Library/GUID
+'2. VBA-Library/AllWinAPIFunctions
+'3. VBA-Library/CreateGUIDString
+
+'NOTES:
+'1. This executes string input as Powershell (32-bit) syntax in an invisible window and returns all values of the console output arranged in a collection
+
+Public Function RunPowershell(ScriptSyntax As String) As Collection
+    Dim ObjShell As Object
+    Dim TempFilePath As String
+    Dim fso As Object
+    Dim TxtStream As Object
+    Dim FileNum As Integer
+    Dim RowTxt As String
+    Dim i As Long
+    Dim TempCol As New Collection
+    Dim GUIDString As String
+     
+    Set RunPowershell = New Collection
+     
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    GUIDString = CreateGUIDString(False)
+    TempFilePath = CStr(Environ("USERPROFILE") & "\AppData\Local\Temp\PS_TEMPFILE_(" & GUIDString & ").txt")
+    ScriptSyntax = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe " & ScriptSyntax & " | Out-File '" & TempFilePath & "'"
+    Set TxtStream = fso.CreateTextFile(TempFilePath, True)
+    TxtStream.Close
+    
+    Set ObjShell = CreateObject("WScript.Shell")
+    ObjShell.Run ScriptSyntax, 0, True
+    
+    i = 0
+    
+    FileNum = FreeFile()
+    Open TempFilePath For Input As FileNum
+    Do Until EOF(FileNum)
+        Line Input #FileNum, RowTxt
+        
+        If i = 0 Then
+            RunPowershell.Add CStr(Mid(CStr(RowTxt), 3))
+        Else
+            RunPowershell.Add CStr(RowTxt)
+        End If
+        i = i + 1
+    Loop
+    
+    Close #FileNum
+    
+    fso.DeleteFile TempFilePath, True
+End Function
