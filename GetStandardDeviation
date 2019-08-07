@@ -1,0 +1,22 @@
+Public Function GetStandardDeviation(Dataset As Recordset, FieldName As String) As Double
+    Dim Mean As Double
+    Dim ItemCount As Long
+    Dim Recset As Recordset
+    Dim TempSum As Double
+    
+    Dataset.MoveFirst
+    Dataset.MoveLast
+    ItemCount = CLng(Dataset.RecordCount)
+    
+    Set Recset = Application.CurrentDb.OpenRecordset("SELECT SUM([" & FieldName & "]) as TotalVal FROM (" & Dataset.Name & ")", , dbOpenForwardOnly)
+    Mean = Recset.Fields(0).Value / ItemCount
+    
+    Dataset.MoveFirst
+    Do Until Dataset.EOF
+        TempSum = TempSum + (Dataset(FieldName) - Mean) ^ 2
+        
+        Dataset.MoveNext
+    Loop
+    Mean = TempSum / ItemCount
+    GetStandardDeviation = Sqr(Mean)
+End Function
