@@ -1,0 +1,13 @@
+'PURPOSE:
+'1. Retrieves the fiscal year of a supplied date as a string ([STARTINGYEAR] - [ENDINGYEAR])
+'2. For significantly faster results when using in a query, use the below formula instead:
+'   cstr(cint(((cdbl([YOUR_DATE])+1)/365) - (1/12)) + 1899 ) & "-" &  cstr(cint(((cdbl([YOUR_DATE])+1)/365) - (1/12)) + 1900 )
+
+Public Function GetFiscalYear(InputDate As Date) As String    
+    Dim OffsetDate As Double
+    Dim StartingYear As Integer
+
+    OffsetDate = CDbl(InputDate) + 1
+    StartingYear = CInt((OffsetDate / 365) - (1 / 12)) + 1899
+    GetFiscalYear = StartingYear & "-" & StartingYear + 1
+End Function
