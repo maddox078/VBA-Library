@@ -1,0 +1,46 @@
+Public Function RecordsetToHTMLTable(Recset As Recordset) As String
+    Dim HTML As String
+    Dim X As Integer
+    Dim Y As Long
+    
+    Recset.MoveFirst
+        
+    HTML = "<HTML><TABLE Border='1'>"
+
+    'Make table column headers
+    X = 0
+    Do Until X >= Recset.Fields.Count
+        HTML = HTML & "<FONT Color='white'><b><TH bgcolor=#006600>" & Recset.Fields(X).Name & "</TH></b></FONT>"
+        
+        X = X + 1
+    Loop
+    
+    Y = 1
+    Do Until Recset.EOF
+        'Make every other row shaded
+        If Y Mod 2 = 0 Then
+            HTML = HTML & "<TR bgcolor=#d9d9d9>"
+        Else
+            HTML = HTML & "<TR>"
+        End If
+        
+        X = 0
+        
+        'Loop through each field's value for this record and add to the row
+        Do Until X >= Recset.Fields.Count
+            HTML = HTML & "<TD>" & Recset.Fields(X).Value & "</TD>"
+            
+            X = X + 1
+        Loop
+        
+        HTML = HTML & "</TR>"
+        Y = Y + 1
+        
+        Recset.MoveNext
+    Loop
+    
+    HTML = HTML & "</TABLE></HTML>"
+    
+    RecordsetToHTMLTable = HTML
+    
+End Function
