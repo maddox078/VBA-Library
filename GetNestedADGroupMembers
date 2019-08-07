@@ -1,0 +1,46 @@
+Public Function GetNestedADGroupMembers(DistinguishedName As String) As Collection
+    'Example input below:
+    'LDAP://CN=CAG_Composite_BIT01729_App,OU=Permissions Groups,OU=Common,DC=fi,DC=com
+    
+    Dim objGroup As Object
+    Dim objMember As Object
+    Dim Groups As New Collection
+    Dim Thing As Variant
+    Dim SubThing As Variant
+    Dim FoundFlag As Boolean
+    
+    Set QueryADWithVBA = New Collection
+    
+    Set objGroup = GetObject(DistinguishedName)
+    For Each objMember In objGroup.Members
+        If objMember.Class = "Group" Then
+            Set Groups = QueryADWithVBA(objMember.adspath)
+            For Each Thing In Groups
+                FoundFlag = False
+                For Each SubThing In QueryADWithVBA
+                    If SubThing = Thing Then
+                        FoundFlag = True
+                        Exit For
+                    End If
+                Next SubThing
+                
+                If FoundFlag = False Then
+                    QueryADWithVBA.Add Thing
+                End If
+            Next Thing
+        ElseIf objMember.Class = "User" Then
+            FoundFlag = False
+            For Each SubThing In QueryADWithVBA
+                If SubThing = objMember.samAccountName Then
+                    FoundFlag = True
+                    Exit For
+                End If
+            Next SubThing
+            
+            If FoundFlag = False Then
+                QueryADWithVBA.Add objMember.samAccountName
+            End If
+        End If
+    Next objMember
+        
+End Function
