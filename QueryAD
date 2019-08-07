@@ -1,0 +1,39 @@
+'NOTES:
+'1. This allows a string to be passed in to an LDAP query
+'2. First argument is the filtering criteria, second is what you want it to return 
+
+Public Function QueryAD(FilterSyntax As String, ResultSyntax As String) As Collection
+    Dim RootDSE As Object
+    Dim Cmd As Object
+    Dim Conn As Object
+    Dim Recset As Object
+    Dim X As Integer
+    Dim Subcol As Collection
+        
+    Set Cmd = CreateObject("ADODB.Command")
+    Set Conn = CreateObject("ADODB.Connection")
+    Set QueryAD = New Collection
+    Set RootDSE = GetObject("LDAP://RootDSE")
+    Conn.Provider = "ADsDSOObject"
+    Conn.Open "Active Directory Provider"
+    Set Cmd.ActiveConnection = Conn
+    Cmd.CommandText = "<LDAP://" & RootDSE.Get("defaultNamingContext") & ">;" & FilterSyntax & ";" & ResultSyntax & ";subtree"
+    Cmd.Properties("Page Size") = 9999
+    Cmd.Properties("Size Limit") = 9999
+    Set Recset = Cmd.Execute
+    
+    Do Until Recset.EOF
+        Set Subcol = New Collection
+        X = 1
+        
+        Do Until X > 1
+            Subcol.Add Recset.Fields(X - 1).Value
+            
+            X = X + 1
+        Loop
+        
+        QueryAD.Add Subcol
+        Recset.MoveNext
+    Loop
+    
+End Function
