@@ -1,0 +1,2 @@
+Public Declare PtrSafe Function CoCreateGuid Lib "ole32.dll" (OutputGUID As GUID) As LongPtr
+Public Declare PtrSafe Function StringFromGUID2 Lib "ole32.dll" (InputGUID As GUID, ByVal OutputStr As LongPtr, ByVal GUIDLength As Long) As LongPtr
