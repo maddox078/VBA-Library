@@ -1,0 +1,3 @@
+Public Function Sigmoid(InputVal As Variant) As Double
+  Sigmoid = 1 / (1 + Exp(-1 * InputVal))
+End Function
