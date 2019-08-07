@@ -1,0 +1,16 @@
+'NOTES:
+'1. This works by taking the first item in the array and getting its RAM memory pointer, then takes the same for the last item.
+'2. The two addresses are subtracted to determine how many bytes are between the two points, since arrays can't be fragmented in memory.
+'3. Return value is in Bytes
+
+Public Function FindSizeOfRecordset(TableName As String) As Long
+    Dim Recset As Recordset
+    Dim ary() As Variant
+        
+    Set Recset = CurrentDb.OpenRecordset(TableName)
+    Recset.MoveFirst
+    Recset.MoveLast
+    Recset.MoveFirst
+    ary = Recset.GetRows(Recset.RecordCount)
+    FindSizeOfRecordset = Abs(VarPtr(ary(0, 0)) - VarPtr(ary(UBound(ary, 1), UBound(ary, 2))))
+End Function
