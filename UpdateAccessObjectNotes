@@ -1,0 +1,54 @@
+'NOTES:
+'1. The input variables are all evaluated as expressions
+
+Public Function UpdateAccessObjectNotes(TargetObjectName As String, MessageToWrite As String) As Boolean
+    Dim TargetObj As Object
+    Dim Thing As Variant
+    Dim ObjFound As Boolean
+    Dim PropertyFound As Boolean
+    Dim NewProperty As Property
+    
+    UpdateObjectNotes = False
+    ObjFound = False
+    PropertyFound = False
+
+    MessageToWrite = Eval(MessageToWrite)
+    TargetObjectName = Eval(TargetObjectName)
+    
+    For Each Thing In Application.CurrentDb.TableDefs
+        If Thing.Name = TargetObjectName Then
+            Set TargetObj = Thing
+            ObjFound = True
+            Exit For
+        End If
+    Next Thing
+    
+    If ObjFound = False Then
+        For Each Thing In Application.CurrentDb.QueryDefs
+            If Thing.Name = TargetObjectName Then
+                Set TargetObj = Thing
+                ObjFound = True
+                Exit For
+            End If
+        Next Thing
+    End If
+    
+    If ObjFound = True Then
+        For Each Thing In TargetObj.Properties
+            If Thing.Name = "Description" Then
+                PropertyFound = True
+                Exit For
+            End If
+        Next Thing
+        
+        If PropertyFound = False Then
+            Set NewProperty = TargetObj.CreateProperty("Description", 10, MessageToWrite)
+            TargetObj.Properties.Append NewProperty
+        Else
+            TargetObj.Properties("Description").Value = MessageToWrite
+        End If
+        
+        UpdateAccessObjectNotes = True
+    End If
+    
+End Function
