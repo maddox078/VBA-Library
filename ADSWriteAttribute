@@ -1,0 +1,12 @@
+'NOTES:
+'1. Writes an alternative data stream property by name to a specified file
+
+Public Function ADSWriteAttribute(FilePath As String, AttributeName As String, AttributeValue As String)
+    Dim fso As Object
+    Dim Retval As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set Retval = fso.CreateTextFile(FilePath & ":" & AttributeName)
+    Retval.WriteLine AttributeValue
+    Retval.Close
+End Function
