@@ -1,0 +1,29 @@
+'NOTES:
+'1. This method is symmetrical: run it on a binary string to encrypt it and run it again on that string to decrypt it
+
+Public Function BitShuffle(ByVal BinaryString As String) As String
+    Dim X As Integer
+    Dim Y As Integer
+    Dim TempStr As String
+    Dim TempStr2 As String
+    
+    Y = 1
+    Do Until Y > Len(BinaryString)
+        TempStr = Mid(BinaryString, Y, 8)
+        
+        X = 0
+        Do Until X > 7
+            TempStr = TempStr & Mid(BinaryString, 7 - X + 1, 1)
+            X = X + 1
+        Loop
+        
+        X = 1
+        Do Until X > 8
+            TempStr2 = TempStr2 & Mid(TempStr, X + 1, 1)
+            TempStr2 = TempStr2 & Mid(TempStr, X, 1)
+            X = X + 2
+        Loop
+        Y = Y + 8
+    Loop
+    BitShuffle = TempStr2
+End Function
