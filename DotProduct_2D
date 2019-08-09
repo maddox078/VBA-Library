@@ -1,0 +1,35 @@
+'NOTES:
+'1. Straightforward, just finds the dot product of two arrays, be aware that it doesn't check for compatibility between the arrays, that's up to you
+
+Public Function DotProduct_2D(Array1 As Variant, Array2 As Variant) As Variant()
+    Dim Array3() As Variant
+    Dim X As Long
+    Dim Y As Long
+    Dim Z As Long
+    Dim TempSum As Double
+        
+    ReDim Preserve Array3(UBound(Array1, 1), UBound(Array2, 2))
+    
+    Y = 0
+    Do Until Y >= UBound(Array3, 1)
+        X = 0
+        
+        Do Until X >= UBound(Array3, 2)
+            TempSum = 0
+            Z = 0
+            Do Until Z >= UBound(Array3, 2)
+                TempSum = TempSum + Array1(Y, Z) * Array2(Z, (Y + Z) Mod (UBound(Array3, 2) - 1) + X)
+               
+                Z = Z + 1
+            Loop
+            
+            Array3(Y, X) = TempSum
+            X = X + 1
+        Loop
+        
+        Y = Y + 1
+    Loop
+    
+    DotProduct_2D = Array3
+    
+End Function
