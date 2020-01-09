@@ -1,0 +1,139 @@
+Public Function GMul(Input1 As Variant, Input2 As Variant) As Variant
+    Dim BinStr1 As String
+    Dim BinStr2 As String
+    Dim BinStr3 As String
+    Dim BinAry1() As Variant
+    Dim BinAry2() As Variant
+    Dim PolyAry1() As Variant
+    Dim PolyAry2() As Variant
+    Dim PolyAry3() As Long
+    Dim MaxDegree As Long
+    Dim PolyList As New Collection
+    Dim Flag As Boolean
+    Dim X As Long
+    Dim Y As Long
+    Dim Z As Long
+    Dim NumeratorStr As String
+    Dim DenominatorStr As String
+    Dim ResultStr As String
+    Dim Holding As Variant
+    
+    'Get binary values of the inputs
+    BinStr1 = CBin(Input1, True)
+    BinStr2 = CBin(Input2, True)
+    BinAry1 = StringToArray(BinStr1)
+    BinAry2 = StringToArray(BinStr2)
+    
+    'Initialize arrays to store polynomials of the binary inputs and their simplification
+    ReDim PolyAry1(1)
+    ReDim PolyAry2(1)
+    ReDim PolyAry3(1)
+    
+    'Get ordinals of set bits in binary of input 1
+    X = 0
+    Do Until X > UBound(BinAry1)
+        If BinAry1(X) = 1 Then
+            ReDim Preserve PolyAry1(UBound(PolyAry1) + 1)
+            PolyAry1(UBound(PolyAry1) - 1) = UBound(BinAry1) - X - 1
+        End If
+        
+        X = X + 1
+    Loop
+    
+    'Get ordinals of set bits in binary of input 2
+    X = 0
+    Do Until X > UBound(BinAry2)
+        If BinAry2(X) = 1 Then
+            ReDim Preserve PolyAry2(UBound(PolyAry2) + 1)
+            PolyAry2(UBound(PolyAry2) - 1) = UBound(BinAry2) - X - 1
+        End If
+        
+        X = X + 1
+    Loop
+    
+    'Find max degree of polynomial (this minus the max degree of the reducing polynomial is the number of reduction operations we need to run)
+    MaxDegree = 0
+    X = 0
+    Do Until X > UBound(PolyAry1)
+        Y = 0
+        Do Until Y > UBound(PolyAry2)
+            'Multiply the degrees of the two items
+            Holding = PolyAry1(X) + PolyAry2(Y)
+            
+            'See if degree already exists
+            Flag = False
+            Z = 1
+            Do Until Z > PolyList.Count
+                If PolyList(Z) = Holding Then
+                    Flag = True
+                    Exit Do
+                End If
+                
+                Z = Z + 1
+            Loop
+            
+            'If the polynomial degree already exists, remove it and don't add it back unless it's found again (since addition/subtraction in GF(2^8) is mod 2 (or just XOR))
+            If Flag = False Then
+                PolyList.Add Holding, Chr(Holding)
+            Else
+                PolyList.Remove Chr(Holding)
+            End If
+            
+            'Update highest degree of resulting polynomial if needed
+            If Holding > MaxDegree Then
+                MaxDegree = Holding
+            End If
+
+            Y = Y + 1
+        Loop
+        
+        X = X + 1
+    Loop
+    
+    'Initialize the resulting polynomial array since we know the highest order it reaches
+    ReDim PolyAry3(MaxDegree)
+    
+    X = 1
+    Do Until X > PolyList.Count
+        If PolyList(X) >= 0 Then
+            If PolyList(X) = 0 Then
+                PolyAry3(UBound(PolyAry3)) = 1
+            Else
+                PolyAry3(PolyList(X) - 1) = 1
+            End If
+        End If
+        
+        X = X + 1
+    Loop
+    
+    'This is currently the result of the polynomial multiplication of the two binary inputs
+    NumeratorStr = ArrayToString(RotateArray(StringToArray(StrReverse(ArrayToString(PolyAry3))), -1))
+    
+    'Polynomial representation of the reducing factor (AES uses: x^8 + x^4 + x^3 + x^1 + 1)
+    DenominatorStr = "100011101"
+    
+    'Make sure the reducing polynomial binary string and result string are same length
+    Holding = Len(DenominatorStr) - Len(NumeratorStr)
+    If Holding < 0 Then
+        DenominatorStr = DenominatorStr & String$(Abs(Holding), "0")
+    Else
+        NumeratorStr = String$(Holding, "0") & NumeratorStr
+    End If
+    
+    ResultStr = BitwiseOperation(NumeratorStr, DenominatorStr, "XOR")
+    
+    'Keep reducing until the degree of the result is less than 9 (ie: smaller than 256)
+    Do Until UBound(StringToArray(Mid(ResultStr, InStr(1, ResultStr, "1")))) <= 8
+        NumeratorStr = ResultStr
+        
+        'To figure out how many times we need to shift the reducer, we need to find how many positions away the nearest set bit is
+        DenominatorStr = ArrayToString(RotateArray(StringToArray(DenominatorStr), InStr(1, NumeratorStr, "1") - InStr(1, DenominatorStr, "1")))
+        
+        ResultStr = BitwiseOperation(NumeratorStr, DenominatorStr, "XOR")
+        
+        X = X + 1
+    Loop
+    
+    'Translate back to byte
+    GMul = CExBin(ResultStr)
+End Function
